@@ -1,0 +1,6 @@
+node_modules/
+dist/
+theme-package/
+komari-theme-tasogare.zip
+*.log
+.DS_Store

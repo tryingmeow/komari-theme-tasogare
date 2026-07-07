@@ -1,0 +1,88 @@
+{
+  "name": "Tasogare 黄昏",
+  "short": "tasogare",
+  "description": "Anime-style glassmorphism theme with day/night dual wallpapers. 二次元彩色玻璃拟态主题，白天与黑夜双壁纸。",
+  "version": "1.0.0",
+  "author": "n0_rep1y",
+  "url": "https://github.com/tryingmeow/komari-theme-tasogare",
+  "preview": "preview.png",
+  "configuration": {
+    "type": "managed",
+    "name": {
+      "en": "Tasogare Theme Settings",
+      "zh-CN": "Tasogare 主题设置",
+      "ja": "Tasogare テーマ設定"
+    },
+    "data": [
+      {
+        "name": { "en": "Wallpapers", "zh-CN": "壁纸", "ja": "壁紙" },
+        "type": "title"
+      },
+      {
+        "key": "wallpaperDay",
+        "type": "string",
+        "default": "",
+        "name": {
+          "en": "Day Wallpaper URL",
+          "zh-CN": "白天壁纸 URL",
+          "ja": "昼の壁紙 URL"
+        },
+        "help": {
+          "en": "Wallpaper for light mode. Leave empty to use the built-in day sky.",
+          "zh-CN": "亮色模式使用的壁纸。留空则使用内置的白天天空。",
+          "ja": "ライトモードの壁紙。空の場合は内蔵の昼空を使用します。"
+        }
+      },
+      {
+        "key": "wallpaperNight",
+        "type": "string",
+        "default": "",
+        "name": {
+          "en": "Night Wallpaper URL",
+          "zh-CN": "黑夜壁纸 URL",
+          "ja": "夜の壁紙 URL"
+        },
+        "help": {
+          "en": "Wallpaper for dark mode. Leave empty to use the built-in starry sky.",
+          "zh-CN": "暗色模式使用的壁纸。留空则使用内置的星空。",
+          "ja": "ダークモードの壁紙。空の場合は内蔵の星空を使用します。"
+        }
+      },
+      {
+        "name": { "en": "Display", "zh-CN": "显示", "ja": "表示" },
+        "type": "title"
+      },
+      {
+        "key": "showLatencyOnCard",
+        "type": "switch",
+        "default": false,
+        "name": {
+          "en": "Show latency on cards",
+          "zh-CN": "卡片显示平均延迟",
+          "ja": "カードに平均遅延を表示"
+        },
+        "help": {
+          "en": "Show average ping latency badge on server cards (requires ping tasks).",
+          "zh-CN": "在服务器卡片上显示平均延迟徽章（需要先配置延迟监控任务）。",
+          "ja": "サーバーカードに平均遅延バッジを表示します（Pingタスクの設定が必要）。"
+        }
+      },
+      {
+        "key": "offlinePosition",
+        "type": "select",
+        "options": "First,Keep,Last",
+        "default": "Last",
+        "name": {
+          "en": "Offline Server Position",
+          "zh-CN": "离线节点位置",
+          "ja": "オフラインサーバーの位置"
+        },
+        "help": {
+          "en": "Where to place offline servers in the list.",
+          "zh-CN": "离线节点在列表中的排序位置。",
+          "ja": "リスト内のオフラインサーバーの位置。"
+        }
+      }
+    ]
+  }
+}

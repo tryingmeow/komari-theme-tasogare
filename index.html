@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Komari</title>
+    <script>
+      // Apply theme before first paint to avoid flash
+      (function () {
+        var saved = localStorage.getItem("tasogare-mode");
+        var mode =
+          saved === "day" || saved === "night"
+            ? saved
+            : window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "night"
+              : "day";
+        document.documentElement.dataset.mode = mode;
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
