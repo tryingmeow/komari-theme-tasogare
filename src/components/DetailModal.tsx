@@ -134,8 +134,13 @@ function PingLegend({
               <span>{task.name}</span>
               <span style={{ color: faceColor }}>{face}</span>
             </span>
-            <span className="text-[10.5px] num" style={{ color: faceColor }}>
-              {a > 0 ? `${a}ms` : t("ping_timeout")}
+            <span className="flex items-center gap-1.5 text-[10.5px] num">
+              <span style={{ color: faceColor }}>
+                {a > 0 ? `${a}ms` : t("ping_timeout")}
+              </span>
+              <span style={{ color: lossColor(l) || "var(--text-dim)" }}>
+                {l}%
+              </span>
             </span>
             <span className="hidden group-hover:flex flex-col gap-1 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-30 glass-strong rounded-xl px-3 py-2 whitespace-nowrap text-left text-[11.5px]">
               <span className="flex items-center gap-2">

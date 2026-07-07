@@ -1,8 +1,10 @@
-import type { LatestStatus, NodeInfo } from "../lib/api";
+import { useEffect, useState } from "react";
+import type { LatestStatus, NodeInfo, PingRecord } from "../lib/api";
+import { getPingRecords } from "../lib/api";
 import { daysUntil, fmtBytes, fmtPercent, fmtSpeed, fmtUptime, shortOs, trafficUsed } from "../lib/format";
 import { fmtDaysLeft, t } from "../lib/i18n";
 import { osIcon } from "../lib/osIcon";
-import { lossColor, pingColor, pingFace, pingTier } from "../lib/ping";
+import { TIER_COLORS, lossColor, pingColor, pingFace, pingTier } from "../lib/ping";
 import Flag from "./Flag";
 
 interface Props {
@@ -29,6 +31,83 @@ function tiltMove(e: React.MouseEvent<HTMLButtonElement>) {
 
 function tiltLeave(e: React.MouseEvent<HTMLButtonElement>) {
   e.currentTarget.style.transform = "";
+}
+
+// quality strip: recent ping history condensed into one thin segmented bar
+const STRIP_HOURS = 4;
+const STRIP_BUCKETS = 30;
+const STRIP_REFRESH = 5 * 60_000;
+
+interface StripSeg {
+  tier: number;
+  ms: number; // 0 = every probe failed in this window
+  loss: number;
+  from: number;
+  to: number;
+}
+
+const fmtHM = (ts: number) => {
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
+
+function bucketize(records: PingRecord[]): (StripSeg | null)[] | null {
+  const now = Date.now();
+  const span = STRIP_HOURS * 3600_000;
+  const start = now - span;
+  const bucketMs = span / STRIP_BUCKETS;
+  const buckets = Array.from({ length: STRIP_BUCKETS }, () => ({ sum: 0, ok: 0, total: 0 }));
+  for (const r of records) {
+    const ts = new Date(r.time).getTime();
+    if (ts < start || ts > now) continue;
+    const i = Math.min(STRIP_BUCKETS - 1, Math.floor(((ts - start) / span) * STRIP_BUCKETS));
+    const b = buckets[i];
+    b.total++;
+    if (r.value > 0) {
+      b.sum += r.value;
+      b.ok++;
+    }
+  }
+  if (buckets.every((b) => b.total === 0)) return null;
+  return buckets.map((b, i) => {
+    if (!b.total) return null;
+    const loss = Math.round(((b.total - b.ok) / b.total) * 100);
+    const ms = b.ok ? Math.round(b.sum / b.ok) : 0;
+    return {
+      tier: b.ok ? pingTier(ms, loss) : 2,
+      ms,
+      loss,
+      from: start + i * bucketMs,
+      to: start + (i + 1) * bucketMs,
+    };
+  });
+}
+
+function useQualityStrip(uuid: string, enabled: boolean, index: number) {
+  const [segs, setSegs] = useState<(StripSeg | null)[] | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    let stop = false;
+    let timer: number | undefined;
+    const load = async () => {
+      if (stop) return;
+      try {
+        const d = await getPingRecords(uuid, STRIP_HOURS);
+        if (stop) return;
+        setSegs(bucketize(d.records || []));
+      } catch {
+        /* transient error: keep last strip */
+      }
+      timer = window.setTimeout(load, STRIP_REFRESH);
+    };
+    // stagger initial fetches so a large grid doesn't burst the API
+    timer = window.setTimeout(load, Math.min(index * 120, 2000));
+    return () => {
+      stop = true;
+      window.clearTimeout(timer);
+    };
+  }, [uuid, enabled, index]);
+  return segs;
 }
 
 const GRADS = {
@@ -87,6 +166,10 @@ export default function NodeCard({ node, status, index, showLatency, onClick }: 
   const trafficUse = status ? trafficUsed(status.net_total_up, status.net_total_down, node.traffic_limit_type) : 0;
   const trafficPct = trafficLimit > 0 ? Math.min(100, (trafficUse / trafficLimit) * 100) : 0;
   const trafficStyle = trafficPct >= 90 ? GRADS.trafficHot : GRADS.traffic;
+
+  const strip = useQualityStrip(node.uuid, showLatency, index);
+  const [stripHover, setStripHover] = useState<number | null>(null);
+  const hoverSeg = strip && stripHover !== null ? strip[stripHover] : null;
 
   const expDays = daysUntil(node.expired_at);
   const expSoon = expDays !== null && expDays <= 15;
@@ -166,42 +249,7 @@ export default function NodeCard({ node, status, index, showLatency, onClick }: 
               <span style={{ color: "#fb7185" }}>↑</span> {fmtSpeed(status.net_out)}{" "}
               <span style={{ color: "#2dd4bf" }}>↓</span> {fmtSpeed(status.net_in)}
             </span>
-            <span className="text-dim flex items-center">
-              {showLatency && pingStats.length > 0 && (
-                <span className="relative group mr-2">
-                  <span
-                    className="font-medium"
-                    style={{ color: avgPing !== null ? pingColor(avgPing, avgLoss) : "#fb7185" }}
-                  >
-                    {avgPing !== null
-                      ? `${pingFace(avgPing, avgLoss)} ${avgPing}ms`
-                      : t("ping_timeout")}
-                  </span>
-                  {/* per-ISP breakdown on hover */}
-                  <span className="hidden group-hover:flex flex-col gap-1 absolute bottom-full right-0 mb-2 z-20 glass-strong rounded-xl px-3 py-2 whitespace-nowrap text-left">
-                    {pingStats.map((p) => (
-                      <span key={p.name} className="flex items-center gap-2 text-[11.5px]">
-                        <span
-                          className="w-1.5 h-1.5 rounded-full shrink-0"
-                          style={{ background: p.avg > 0 ? pingColor(p.avg, p.loss) : "#fb7185" }}
-                        />
-                        <span style={{ color: "var(--text)" }}>{p.name}</span>
-                        <span
-                          className="ml-auto font-medium"
-                          style={{ color: p.avg > 0 ? pingColor(p.avg, p.loss) : "#fb7185" }}
-                        >
-                          {p.avg > 0 ? `${Math.round(p.avg)}ms` : t("ping_timeout")}
-                        </span>
-                        <span style={{ color: lossColor(p.loss) || "var(--text-dim)" }}>
-                          {t("loss")} {Math.round(p.loss)}%
-                        </span>
-                      </span>
-                    ))}
-                  </span>
-                </span>
-              )}
-              ⏱ {fmtUptime(status.uptime, t)}
-            </span>
+            <span className="text-dim">⏱ {fmtUptime(status.uptime, t)}</span>
           </>
         ) : (
           <span className="text-dim">{t("offline_hint")}</span>
@@ -231,6 +279,94 @@ export default function NodeCard({ node, status, index, showLatency, onClick }: 
               {tag}
             </span>
           ))}
+        </div>
+      )}
+
+      {/* ping row: face + avg latency, quality strip of recent history, loss — one line for everything network */}
+      {showLatency && online && pingStats.length > 0 && (
+        <div className="flex items-center gap-2 mt-3 text-[12px] num">
+          <span className="relative group cursor-default shrink-0">
+            <span
+              className="font-medium"
+              style={{ color: avgPing !== null ? pingColor(avgPing, avgLoss) : "#fb7185" }}
+            >
+              {avgPing !== null ? `${pingFace(avgPing, avgLoss)} ${avgPing}ms` : t("ping_timeout")}
+            </span>
+            {/* per-ISP breakdown on hover */}
+            <span className="hidden group-hover:flex flex-col gap-1 absolute bottom-full left-0 mb-2 z-20 glass-strong rounded-xl px-3 py-2 whitespace-nowrap text-left">
+              {pingStats.map((p) => (
+                <span key={p.name} className="flex items-center gap-2 text-[11.5px]">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ background: p.avg > 0 ? pingColor(p.avg, p.loss) : "#fb7185" }}
+                  />
+                  <span style={{ color: "var(--text)" }}>{p.name}</span>
+                  <span
+                    className="ml-auto font-medium"
+                    style={{ color: p.avg > 0 ? pingColor(p.avg, p.loss) : "#fb7185" }}
+                  >
+                    {p.avg > 0 ? `${Math.round(p.avg)}ms` : t("ping_timeout")}
+                  </span>
+                  <span style={{ color: lossColor(p.loss) || "var(--text-dim)" }}>
+                    {t("loss")} {Math.round(p.loss)}%
+                  </span>
+                </span>
+              ))}
+            </span>
+          </span>
+
+          {strip ? (
+            <div className="relative flex-1" onMouseLeave={() => setStripHover(null)}>
+              {hoverSeg && (
+                <span className="flex items-center gap-2 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 glass-strong rounded-xl px-3 py-1.5 whitespace-nowrap text-[11.5px] num pointer-events-none">
+                  <span className="text-dim">
+                    {fmtHM(hoverSeg.from)}–{fmtHM(hoverSeg.to)}
+                  </span>
+                  <span className="w-px h-3" style={{ background: "var(--glass-border)" }} />
+                  <span className="font-medium" style={{ color: TIER_COLORS[hoverSeg.tier] }}>
+                    {hoverSeg.ms > 0 ? `${hoverSeg.ms}ms` : t("ping_timeout")}
+                  </span>
+                  <span className="w-px h-3" style={{ background: "var(--glass-border)" }} />
+                  <span style={{ color: lossColor(hoverSeg.loss) || "var(--text-dim)" }}>
+                    {t("loss")} {hoverSeg.loss}%
+                  </span>
+                </span>
+              )}
+              <div className="flex h-[3px] rounded-full overflow-hidden" aria-hidden>
+                {strip.map((seg, i) => (
+                  <span
+                    key={i}
+                    className="flex-1"
+                    style={
+                      seg === null
+                        ? { background: "var(--chip)", opacity: 0.5 }
+                        : {
+                            background: TIER_COLORS[seg.tier],
+                            opacity:
+                              stripHover === i ? 1 : seg.tier === 0 ? 0.4 : seg.tier === 1 ? 0.55 : 0.8,
+                          }
+                    }
+                  />
+                ))}
+              </div>
+              {/* invisible hover targets, taller than the 3px ribbon for easier aiming */}
+              <div className="absolute -top-[10px] -bottom-[10px] inset-x-0 flex z-10 cursor-pointer">
+                {strip.map((seg, i) => (
+                  <span
+                    key={i}
+                    className="flex-1"
+                    onMouseEnter={() => setStripHover(seg ? i : null)}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 h-[3px] rounded-full" style={{ background: "var(--chip)", opacity: 0.4 }} />
+          )}
+
+          <span className="shrink-0" style={{ color: lossColor(Math.round(avgLoss)) || "var(--text-dim)" }}>
+            {Math.round(avgLoss)}%
+          </span>
         </div>
       )}
     </button>
