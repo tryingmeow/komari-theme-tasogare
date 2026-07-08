@@ -38,6 +38,7 @@ Download the zip from Releases, upload it in **Admin → Settings → Theme**, s
 | 白天壁纸 URL | 亮色模式壁纸，留空用内置天空 |
 | 黑夜壁纸 URL | 暗色模式壁纸，留空用内置星空 |
 | 卡片显示平均延迟 | 需要先在后台配置延迟监控任务 |
+| 丢包判定灵敏度 | 丢包变黄/变红阈值：Strict 3%/9% · Standard 5%/12%（默认）· Relaxed 10%/25%；全挂线路按 100% 丢包计入卡片平均 |
 | 离线节点位置 | First / Keep / Last |
 
 ## 🛠 开发 / Development

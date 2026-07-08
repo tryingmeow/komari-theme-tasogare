@@ -158,8 +158,9 @@ export default function NodeCard({ node, status, index, showLatency, onClick }: 
   const avgPing = measuredPing.length
     ? Math.round(measuredPing.reduce((a, b) => a + b.avg, 0) / measuredPing.length)
     : null;
-  const avgLoss = measuredPing.length
-    ? measuredPing.reduce((a, b) => a + b.loss, 0) / measuredPing.length
+  // a line with no successful probe counts as 100% loss — a dead ISP must drag the average
+  const avgLoss = pingStats.length
+    ? pingStats.reduce((a, p) => a + (p.avg > 0 ? p.loss : 100), 0) / pingStats.length
     : 0;
 
   const trafficLimit = node.traffic_limit || 0;

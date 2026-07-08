@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react
 import type { LatestStatus, NodeInfo, PublicInfo } from "./lib/api";
 import { getLatest, getNodes, getPublicInfo } from "./lib/api";
 import { t } from "./lib/i18n";
+import { setLossSensitivity } from "./lib/ping";
 import Background from "./components/Background";
 import StatsBar from "./components/StatsBar";
 import NodeCard from "./components/NodeCard";
@@ -98,6 +99,7 @@ export default function App() {
   const wallDay = cfgDay || cfgNight || DEFAULT_WALL_DAY;
   const wallNight = cfgNight || cfgDay || DEFAULT_WALL_NIGHT;
   const showLatency = settings.showLatencyOnCard === true || settings.showLatencyOnCard === "true";
+  setLossSensitivity((settings.lossSensitivity as string) || "Standard");
   const offlinePos = ((settings.offlinePosition as string) || "Last").toLowerCase();
 
   const groups = useMemo(() => {

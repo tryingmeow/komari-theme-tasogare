@@ -2,7 +2,7 @@
   "name": "Tasogare 黄昏",
   "short": "tasogare",
   "description": "Vibrant glassmorphism theme with day/night dual wallpapers. 彩色玻璃拟态主题，白天与黑夜双壁纸。",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "author": "n0_rep1y",
   "url": "https://github.com/tryingmeow/komari-theme-tasogare",
   "preview": "preview.png",
@@ -65,6 +65,22 @@
           "en": "Show average ping latency badge on server cards (requires ping tasks).",
           "zh-CN": "在服务器卡片上显示平均延迟徽章（需要先配置延迟监控任务）。",
           "ja": "サーバーカードに平均遅延バッジを表示します（Pingタスクの設定が必要）。"
+        }
+      },
+      {
+        "key": "lossSensitivity",
+        "type": "select",
+        "options": "Strict,Standard,Relaxed",
+        "default": "Standard",
+        "name": {
+          "en": "Packet Loss Sensitivity",
+          "zh-CN": "丢包判定灵敏度",
+          "ja": "パケットロス判定感度"
+        },
+        "help": {
+          "en": "Loss thresholds for amber/red on cards and the quality strip. Strict 3%/9%, Standard 5%/12%, Relaxed 10%/25%. With infrequent probes, Strict may change color on a single lost packet.",
+          "zh-CN": "卡片与状态条丢包变黄/变红的阈值。严格 3%/9%，标准 5%/12%，宽松 10%/25%。探测频率较低时，严格档可能因偶发丢单个包而跳色。",
+          "ja": "カードと品質バーが黄/赤になるパケットロス閾値。厳格 3%/9%、標準 5%/12%、緩め 10%/25%。プローブ頻度が低い場合、厳格では単発のロスで色が変わることがあります。"
         }
       },
       {
