@@ -123,7 +123,9 @@ function PingLegend({
         const a = avg.get(task.id) ?? 0;
         const l = loss.get(task.id) ?? 0;
         const face = a > 0 ? pingFace(a, l) : "(×ω×)";
+        // face = combined health (loss drags it down); the ms figure is colored by latency alone
         const faceColor = a > 0 ? pingColor(a, l) : "#fb7185";
+        const msColor = a > 0 ? pingColor(a) : "#fb7185";
         return (
           <span key={task.id} className="relative group inline-flex flex-col items-center cursor-default">
             <span className="flex items-center gap-1.5 text-[12.5px]">
@@ -135,7 +137,7 @@ function PingLegend({
               <span style={{ color: faceColor }}>{face}</span>
             </span>
             <span className="flex items-center gap-1.5 text-[10.5px] num">
-              <span style={{ color: faceColor }}>
+              <span style={{ color: msColor }}>
                 {a > 0 ? `${a}ms` : t("ping_timeout")}
               </span>
               <span style={{ color: lossColor(l) || "var(--text-dim)" }}>
@@ -146,7 +148,7 @@ function PingLegend({
               <span className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: faceColor }} />
                 <span style={{ color: "var(--text)" }}>{task.name}</span>
-                <span className="ml-auto font-medium" style={{ color: faceColor }}>
+                <span className="ml-auto font-medium" style={{ color: msColor }}>
                   {a > 0 ? `${a}ms` : t("ping_timeout")}
                 </span>
               </span>

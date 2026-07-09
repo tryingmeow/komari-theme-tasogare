@@ -287,11 +287,16 @@ export default function NodeCard({ node, status, index, showLatency, onClick }: 
       {showLatency && online && pingStats.length > 0 && (
         <div className="flex items-center gap-2 mt-3 text-[12px] num">
           <span className="relative group cursor-default shrink-0">
-            <span
-              className="font-medium"
-              style={{ color: avgPing !== null ? pingColor(avgPing, avgLoss) : "#fb7185" }}
-            >
-              {avgPing !== null ? `${pingFace(avgPing, avgLoss)} ${avgPing}ms` : t("ping_timeout")}
+            <span className="font-medium">
+              {/* face = combined health (loss drags it down); the ms figure is colored by latency alone */}
+              {avgPing !== null ? (
+                <>
+                  <span style={{ color: pingColor(avgPing, avgLoss) }}>{pingFace(avgPing, avgLoss)}</span>{" "}
+                  <span style={{ color: pingColor(avgPing) }}>{avgPing}ms</span>
+                </>
+              ) : (
+                <span style={{ color: "#fb7185" }}>{t("ping_timeout")}</span>
+              )}
             </span>
             {/* per-ISP breakdown on hover */}
             <span className="hidden group-hover:flex flex-col gap-1 absolute bottom-full left-0 mb-2 z-20 glass-strong rounded-xl px-3 py-2 whitespace-nowrap text-left">
@@ -304,7 +309,7 @@ export default function NodeCard({ node, status, index, showLatency, onClick }: 
                   <span style={{ color: "var(--text)" }}>{p.name}</span>
                   <span
                     className="ml-auto font-medium"
-                    style={{ color: p.avg > 0 ? pingColor(p.avg, p.loss) : "#fb7185" }}
+                    style={{ color: p.avg > 0 ? pingColor(p.avg) : "#fb7185" }}
                   >
                     {p.avg > 0 ? `${Math.round(p.avg)}ms` : t("ping_timeout")}
                   </span>
@@ -324,7 +329,10 @@ export default function NodeCard({ node, status, index, showLatency, onClick }: 
                     {fmtHM(hoverSeg.from)}–{fmtHM(hoverSeg.to)}
                   </span>
                   <span className="w-px h-3" style={{ background: "var(--glass-border)" }} />
-                  <span className="font-medium" style={{ color: TIER_COLORS[hoverSeg.tier] }}>
+                  <span
+                    className="font-medium"
+                    style={{ color: hoverSeg.ms > 0 ? pingColor(hoverSeg.ms) : "#fb7185" }}
+                  >
                     {hoverSeg.ms > 0 ? `${hoverSeg.ms}ms` : t("ping_timeout")}
                   </span>
                   <span className="w-px h-3" style={{ background: "var(--glass-border)" }} />
