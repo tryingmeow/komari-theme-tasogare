@@ -118,7 +118,7 @@ export default function App() {
       );
     }
     const byWeight = (a: NodeInfo, b: NodeInfo) =>
-      b.weight - a.weight || a.name.localeCompare(b.name);
+      a.weight - b.weight || a.name.localeCompare(b.name);
     if (offlinePos === "keep") return list.sort(byWeight);
     const rank = (n: NodeInfo) => (latest[n.uuid]?.online ? 0 : 1);
     return list.sort((a, b) => {
